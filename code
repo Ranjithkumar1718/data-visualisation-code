@@ -1,0 +1,185 @@
+From datetime import datetime, timedelta
+import random
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+# =====================================================================
+# MODULE 1: ENTERPRISE DATA ENGINE & STREAMER
+# =====================================================================
+class SocialMediaDataEngine:
+"""Simulates real-time enterprise social media performance metrics."""
+def __init__(self):
+self.platforms = ["Instagram", "TikTok", "YouTube", "LinkedIn", "X (Twitter)"]
+self.content_types = ["Video", "Image", "Carousel", "Text / Tweet"]
+self.campaigns = ["Q2_Brand_Awareness", "Summer_Promo_2026", "Product_Launch_v2",
+"Organic_Growth"]
+self.regions = ["North America", "Europe", "APAC", "LATAM"]
+def generate_historical_base(self, rows: int = 5000) -> pd.DataFrame:
+"""Generates historical baseline data for analytics initialization."""
+np.random.seed(42)
+random.seed(42)
+start_date = datetime.now() - timedelta(days=90)
+dates = [start_date + timedelta(minutes=int(i * (129600 / rows))) for i in range(rows)]
+data = {
+"Timestamp": dates,
+"Platform": [random.choice(self.platforms) for _ in range(rows)],
+"Content_Type": [random.choice(self.content_types) for _ in range(rows)],
+"Campaign": [random.choice(self.campaigns) for _ in range(rows)],
+"Region": [random.choice(self.regions) for _ in range(rows)],
+"Impressions": np.random.randint(1000, 100000, size=rows),
+"Spend_USD": np.random.uniform(10.0, 500.0, size=rows),
+}
+df = pd.DataFrame(data)
+# Calculate derived metrics with engineered correlation dependencies
+df["Likes"] = (df["Impressions"] * np.random.uniform(0.01, 0.05, size=rows)).astype(int)
+df["Shares"] = (df["Likes"] * np.random.uniform(0.05, 0.20, size=rows)).astype(int)
+df["Comments"] = (df["Likes"] * np.random.uniform(0.02, 0.10, size=rows)).astype(int)
+df["Clicks"] = (df["Impressions"] * np.random.uniform(0.005, 0.03, size=rows)).astype(int)
+# Video specific logic
+df["Watch_Time_Hours"] = np.where(
+df["Content_Type"] == "Video",
+Assignment/VAC 2
+(df["Impressions"] * np.random.uniform(0.02, 0.15, size=rows)) / 60,
+0.0
+)
+return df
+def generate_live_stream_record(self) -> dict:
+"""Generates a single live real-time event record."""
+impressions = random.randint(500, 5000)
+likes = int(impressions * random.uniform(0.01, 0.06))
+content = random.choice(self.content_types)
+return {
+"Timestamp": datetime.now(),
+"Platform": random.choice(self.platforms),
+"Content_Type": content,
+"Campaign": random.choice(self.campaigns),
+"Region": random.choice(self.regions),
+"Impressions": impressions,
+"Spend_USD": round(random.uniform(5.0, 50.0), 2),
+"Likes": likes,
+"Shares": int(likes * random.uniform(0.05, 0.25)),
+"Comments": int(likes * random.uniform(0.02, 0.12)),
+"Clicks": int(impressions * random.uniform(0.005, 0.035)),
+"Watch_Time_Hours": round((impressions * random.uniform(0.02, 0.15)) / 60, 2) if content
+== "Video" else 0.0
+}
+# Initialize data architecture within application memory state
+if "engine" not in st.session_state:
+st.session_state.engine = SocialMediaDataEngine()
+st.session_state.raw_data = st.session_state.engine.generate_historical_base(rows=10000)
+# =====================================================================
+# MODULE 2: INTERACTIVE FILTERS & CALCULATION ENGINE
+# =====================================================================
+def compute_advanced_metrics(df: pd.DataFrame) -> pd.DataFrame:
+"""Applies performance calculations to raw source data."""
+df_calc = df.copy()
+df_calc["Total_Engagement"] = df_calc["Likes"] + df_calc["Shares"] + df_calc["Comments"]
+df_calc["Engagement_Rate_%"] = (df_calc["Total_Engagement"] / df_calc["Impressions"] *
+100).round(2)
+df_calc["CPC_USD"] = (df_calc["Spend_USD"] / df_calc["Clicks"]).round(2)
+df_calc["CTR_%"] = (df_calc["Clicks"] / df_calc["Impressions"] * 100).round(2)
+return df_calc
+# Setup Web Application Page Configuration
+st.set_page_config(page_title="Enterprise Media Analytics Dashboard", layout="wide")
+st.title("📊 Enterprise Social Media Usage & Analytics Pipeline")
+st.markdown("Real-time performance monitoring dashboard processing cross-platform
+advertising and engagement telemetry.")
+# Interactive Filter Control Panels (Sidebar)
+st.sidebar.header("🎛 Control Panel & Global Filters")
+live_streaming = st.sidebar.toggle("Enable Live Data Stream (Simulation)", value=False)
+Assignment/VAC 3
+selected_platforms = st.sidebar.multiselect("Filter Platforms",
+options=st.session_state.engine.platforms, default=st.session_state.engine.platforms)
+selected_regions = st.sidebar.multiselect("Filter Regions",
+options=st.session_state.engine.regions, default=st.session_state.engine.regions)
+# Append dynamic real-time simulated entries if toggled active
+if live_streaming:
+new_record = st.session_state.engine.generate_live_stream_record()
+st.session_state.raw_data = pd.concat([st.session_state.raw_data,
+pd.DataFrame([new_record])], ignore_index=True)
+# Maintain maximum memory ceiling window buﬀer
+if len(st.session_state.raw_data) > 15000:
+st.session_state.raw_data = st.session_state.raw_data.iloc[5000:].reset_index(drop=True)
+# Force rerun to sustain rendering simulation loops
+time_delay = st.sidebar.slider("Refresh Delay (Seconds)", 1.0, 5.0, 2.0)
+st.info(f"Streaming Active. Redrawing UI window...")
+st.button("Manual Frame Refresh")
+# Apply runtime logic pipeline filters
+processed_data = compute_advanced_metrics(st.session_state.raw_data)
+filtered_df = processed_data[
+(processed_data["Platform"].isin(selected_platforms)) &
+(processed_data["Region"].isin(selected_regions))
+]
+# Avoid calculations on completely empty datasets
+if filtered_df.empty:
+st.warning("⚠ No records match current sidebar filter constraints.")
+else:
+# =====================================================================
+# MODULE 3: KPI EXECUTIVES VIEW METRICS
+# =====================================================================
+kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
+with kpi_col1:
+total_spend = filtered_df["Spend_USD"].sum()
+st.metric("Total Ad Spend", f"${total_spend:,.2f}", delta=f"{random.uniform(-2, 5):.1f}% vs
+Last Wk")
+with kpi_col2:
+avg_er = filtered_df["Engagement_Rate_%"].mean()
+st.metric("Avg Engagement Rate", f"{avg_er:.2f}%", delta=f"{random.uniform(-0.5, 0.8):.2f}
+%")
+with kpi_col3:
+total_impressions = filtered_df["Impressions"].sum()
+st.metric("Total Impressions", f"{total_impressions:,}", delta="Stable Engine")
+with kpi_col4:
+avg_cpc = filtered_df["CPC_USD"].replace([np.inf, -np.inf], np.nan).dropna().mean()
+st.metric("Average CPC Cost", f"${avg_cpc:.2f}", delta=f"{random.uniform(-0.1, 0.1):.2f}$
+Optimize", delta_color="inverse")
+# =====================================================================
+# MODULE 4: HIGH-DENSITY INTERACTIVE GRAPH PLOT VISUALIZATIONS
+# =====================================================================
+Assignment/VAC 4
+viz_tabs1, viz_tabs2 = st.tabs(["📈 Marketing Campaign Performance", "🔬 Deep-Dive
+Operational Analysis"])
+with viz_tabs1:
+chart_col1, chart_col2 = st.columns(2)
+with chart_col1:
+st.subheader("Time Series Volume Trend Analysis")
+timeseries_df = filtered_df.copy()
+timeseries_df['Date'] = timeseries_df['Timestamp'].dt.date
+trend_data = timeseries_df.groupby(['Date', 'Platform'])
+['Total_Engagement'].sum().reset_index()
+fig_trend = px.line(trend_data, x="Date", y="Total_Engagement", color="Platform",
+markers=True, template="plotly_white")
+fig_trend.update_layout(xaxis_title="Date", yaxis_title="Total Consolidated Engagements")
+st.plotly_chart(fig_trend, use_container_width=True)
+with chart_col2:
+st.subheader("ROI Eﬃciency (Spend vs Engagement)")
+# Bubble Matrix scatter representation
+campaign_data = filtered_df.groupby("Campaign").agg({
+"Spend_USD": "sum",
+"Total_Engagement": "sum",
+"Impressions": "sum"
+}).reset_index()
+fig_bubble = px.scatter(
+campaign_data, x="Spend_USD", y="Total_Engagement", size="Impressions",
+color="Campaign", hover_name="Campaign", template="plotly_white", size_max=40
+)
+fig_bubble.update_layout(xaxis_title="Total Spend (USD)", yaxis_title="Total Engagement
+Count")
+st.plotly_chart(fig_bubble, use_container_width=True)
+with viz_tabs2:
+chart_col3, chart_col4 = st.columns(2)
+with chart_col3:
+st.subheader("Cross-Platform Conversion CTR Profiles")
+# Bar layout breaking down CTR metrics by Content formats across platforms
+ctr_profile = filtered_df.groupby(["Platform", "Content_Type"])
+["CTR_%"].mean().reset_index()
+fig_ctr = px.bar(
+ctr_profile, x="Platform", y="CTR_%", color="Content_Type",
+barmode="group", template="plotly_white"
+)
+fig_ctr.update_layout(yaxis_title="Average Click-Through Rate (%)")
+st.plotly_chart(fig_ctr, use_container_width=True)
+Assignment/VAC 5
+ Campaign | Impressions | Likes | CTR%
